@@ -1,0 +1,52 @@
+import 'reflect-metadata';
+import { injectable, inject } from 'inversify';
+import { RequestModel } from './RequestModel';
+import axios, { AxiosRequestConfig, AxiosPromise } from 'axios';
+
+const Pitometer = require('@pitometer/pitometer').Pitometer;
+const PrometheusSource = require('@pitometer/source-prometheus').Source;
+const ThresholdGrader = require('@pitometer/grader-threshold').Grader;
+
+import { Logger } from '../lib/Logger';
+
+@injectable()
+export class Service {
+
+  constructor() {}
+
+  public async handleRequest(event: RequestModel): Promise<boolean> {
+    const pitometer = new Pitometer();
+
+    const prometheusUrl =
+      `http://${event.data.service}.${event.data.stage}.cluster.local/prometheus`;
+
+    pitometer.addSource('Prometheus', new PrometheusSource({
+      queryUrl: prometheusUrl,
+    }));
+
+    pitometer.addGrader('Threshold', new ThresholdGrader());
+
+    // tslint:disable-next-line: max-line-length
+    const monspecUrl = `https://raw.githubusercontent.com/${event.data.githuborg}/${event.data.service}/master/monspec/monspec.json`;
+
+    const monspecResponse = await axios.get(monspecUrl);
+    Logger.log(
+      event.shkeptncontext,
+      JSON.stringify(monspecResponse.data),
+    );
+
+    if (monspecResponse.data !== undefined) {
+      try {
+        const ewald = await pitometer.run(monspecResponse.data, 'prod');
+        Logger.log(
+          event.shkeptncontext,
+          JSON.stringify(ewald),
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return true;
+  }
+}
