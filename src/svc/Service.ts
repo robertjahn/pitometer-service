@@ -18,7 +18,7 @@ export class Service {
     const pitometer = new Pitometer();
 
     const prometheusUrl =
-      `http://${event.data.service}.${event.data.stage}.cluster.local/prometheus`;
+      `http://${event.data.service}.${event.data.stage}.svc.cluster.local/prometheus`;
 
     pitometer.addSource('Prometheus', new PrometheusSource({
       queryUrl: prometheusUrl,
