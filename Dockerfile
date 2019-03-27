@@ -4,6 +4,9 @@ ENV PORT 8080
 EXPOSE 8080
 RUN addgroup mygroup && adduser -D -G mygroup myuser && mkdir -p /usr/src/app && chown -R myuser /usr/src/app
 
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash git openssh
+    
 # Prepare app directory
 WORKDIR /usr/src/app
 
