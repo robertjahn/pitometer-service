@@ -20,7 +20,7 @@ export class Service {
     let prometheusUrl;
     if (process.env.NODE_ENV === 'production') {
       prometheusUrl =
-        `http://prometheus-service.monitoring.svc.cluster.local/api/v1/query`;
+        `http://prometheus-service.monitoring.svc.cluster.local:8080/api/v1/query`;
     } else {
       prometheusUrl = 'http://localhost:9090/api/v1/query';
     }
