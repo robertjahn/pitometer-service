@@ -17,8 +17,13 @@ export class Service {
   public async handleRequest(event: RequestModel): Promise<boolean> {
     const pitometer = new Pitometer();
 
-    const prometheusUrl =
-      `http://${event.data.service}.${event.data.stage}.cluster.local/prometheus`;
+    let prometheusUrl;
+    if (process.env.NODE_ENV === 'production') {
+      prometheusUrl =
+        `http://prometheus-service.monitoring.svc.cluster.local/prometheus`;
+    } else {
+      prometheusUrl = 'http://localhost:9090/api/v1';
+    }
 
     pitometer.addSource('Prometheus', new PrometheusSource({
       queryUrl: prometheusUrl,
@@ -40,10 +45,10 @@ export class Service {
         const ewald = await pitometer.run(monspecResponse.data, 'prod');
         Logger.log(
           event.shkeptncontext,
-          JSON.stringify(ewald),
+          JSON.stringify(ewald.data),
         );
       } catch (e) {
-        console.log(e);
+        console.log(e.config);
       }
     }
 
