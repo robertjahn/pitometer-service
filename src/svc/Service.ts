@@ -48,7 +48,11 @@ export class Service {
           JSON.stringify(ewald.data),
         );
       } catch (e) {
-        console.log(e.config);
+        Logger.log(
+          event.shkeptncontext,
+          JSON.stringify(e),
+          'ERROR',
+        );
       }
     }
 
