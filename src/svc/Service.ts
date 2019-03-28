@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { RequestModel } from './RequestModel';
-import axios, { AxiosRequestConfig, AxiosPromise } from 'axios';
+import axios, { AxiosRequestConfig, AxiosPromise, AxiosError } from 'axios';
 
 const Pitometer = require('@pitometer/pitometer').Pitometer;
 const PrometheusSource = require('@pitometer/source-prometheus').Source;
@@ -20,9 +20,9 @@ export class Service {
     let prometheusUrl;
     if (process.env.NODE_ENV === 'production') {
       prometheusUrl =
-        `http://prometheus-service.monitoring.svc.cluster.local/prometheus`;
+        `http://prometheus-service.monitoring.svc.cluster.local/api/v1/query`;
     } else {
-      prometheusUrl = 'http://localhost:9090/api/v1';
+      prometheusUrl = 'http://localhost:9090/api/v1/query';
     }
 
     pitometer.addSource('Prometheus', new PrometheusSource({
@@ -48,9 +48,10 @@ export class Service {
           JSON.stringify(ewald.data),
         );
       } catch (e) {
+        console.log(e);
         Logger.log(
           event.shkeptncontext,
-          JSON.stringify(e),
+          JSON.stringify(e.config),
           'ERROR',
         );
       }
