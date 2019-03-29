@@ -45,7 +45,7 @@ export class Service {
         const ewald = await pitometer.run(monspecResponse.data, 'prod');
         Logger.log(
           event.shkeptncontext,
-          JSON.stringify(ewald.data),
+          `pitometer evaluation result: ${JSON.stringify(ewald.data)}`,
         );
       } catch (e) {
         console.log(e);
