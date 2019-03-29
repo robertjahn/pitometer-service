@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: carts
+  namespace: monitoring
+  labels:
+    app: carts
+    chart: prometheus-operator-2.0.0
+    heritage: Tiller
+    release: prometheus-operator
+spec:
+  selector:
+    matchLabels:
+      chart: sockshop-0.1.0
+  namespaceSelector:
+    matchNames:
+      - dev
+      - staging
+      - production
+  endpoints:
+  - port: web
+    interval: 10s
+    path: '/prometheus'
