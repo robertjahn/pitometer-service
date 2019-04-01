@@ -42,10 +42,10 @@ export class Service {
 
     if (monspecResponse.data !== undefined) {
       try {
-        const ewald = await pitometer.run(monspecResponse.data, 'prod');
+        const evaluationResult = await pitometer.run(monspecResponse.data, 'prod');
         Logger.log(
           event.shkeptncontext,
-          `pitometer evaluation result: ${JSON.stringify(ewald.data)}`,
+          `pitometer evaluation result: ${JSON.stringify(evaluationResult)}`,
         );
       } catch (e) {
         console.log(e);
