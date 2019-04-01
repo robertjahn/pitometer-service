@@ -32,7 +32,7 @@ export class Service {
     pitometer.addGrader('Threshold', new ThresholdGrader());
 
     // tslint:disable-next-line: max-line-length
-    const monspecUrl = `https://raw.githubusercontent.com/${event.data.githuborg}/${event.data.service}/master/monspec/monspec.json`;
+    const monspecUrl = `https://raw.githubusercontent.com/${event.data.githuborg}/${event.data.service}/master/monspec/monspec_${event.data.stage}.json`;
 
     const monspecResponse = await axios.get(monspecUrl);
     Logger.log(
