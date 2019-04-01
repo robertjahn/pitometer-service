@@ -37,7 +37,7 @@ export class Service {
     const monspecResponse = await axios.get(monspecUrl);
     Logger.log(
       event.shkeptncontext,
-      JSON.stringify(monspecResponse.data),
+      monspecResponse.data,
     );
 
     if (monspecResponse.data !== undefined) {
@@ -45,7 +45,7 @@ export class Service {
         const evaluationResult = await pitometer.run(monspecResponse.data, 'prod');
         Logger.log(
           event.shkeptncontext,
-          `pitometer evaluation result: ${JSON.stringify(evaluationResult)}`,
+          evaluationResult,
         );
       } catch (e) {
         console.log(e);

@@ -5,6 +5,6 @@ export class Logger {
       logLevel,
       msg,
       keptnService: 'pitometer-service',
-    }));
+    }, null, 2));
   }
 }
