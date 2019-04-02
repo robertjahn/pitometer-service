@@ -4,10 +4,16 @@ import { RequestModel } from './RequestModel';
 import axios, { AxiosRequestConfig, AxiosPromise, AxiosError } from 'axios';
 
 const Pitometer = require('@pitometer/pitometer').Pitometer;
+// tslint:disable-next-line: variable-name
 const PrometheusSource = require('@pitometer/source-prometheus').Source;
+// tslint:disable-next-line: variable-name
+const DynatraceSource = require('@pitometer/source-dynatrace').Source;
+// tslint:disable-next-line: variable-name
 const ThresholdGrader = require('@pitometer/grader-threshold').Grader;
 
 import { Logger } from '../lib/Logger';
+import { Keptn } from '../lib/Keptn';
+import { Credentials } from '../lib/Credentials';
 
 @injectable()
 export class Service {
@@ -25,28 +31,44 @@ export class Service {
       prometheusUrl = 'http://localhost:9090/api/v1/query';
     }
 
-    pitometer.addSource('Prometheus', new PrometheusSource({
-      queryUrl: prometheusUrl,
-    }));
+    this.addPrometheusSource(event, pitometer, prometheusUrl);
+
+    await this.addDynatraceSource(event, pitometer);
 
     pitometer.addGrader('Threshold', new ThresholdGrader());
 
     // tslint:disable-next-line: max-line-length
-    const monspecUrl = `https://raw.githubusercontent.com/${event.data.githuborg}/${event.data.service}/master/monspec/monspec_${event.data.stage}.json`;
+    const perfspecUrl = `https://raw.githubusercontent.com/${event.data.githuborg}/${event.data.service}/master/monspec/monspec_${event.data.stage}.json`;
+    let perfspecResponse;
 
-    const monspecResponse = await axios.get(monspecUrl);
+    try {
+      perfspecResponse = await axios.get(perfspecUrl, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+    } catch (e) {
+      Logger.log(
+        event.shkeptncontext,
+        `No perfspec file defined for `
+        + `${event.data.project}:${event.data.service}:${event.data.stage}`);
+      return true;
+    }
+
     Logger.log(
       event.shkeptncontext,
-      monspecResponse.data,
+      perfspecResponse.data,
     );
 
-    if (monspecResponse.data !== undefined) {
+    if (perfspecResponse.data !== undefined) {
       try {
-        const evaluationResult = await pitometer.run(monspecResponse.data, 'prod');
+        const evaluationResult = await pitometer.run(perfspecResponse.data, 'prod');
         Logger.log(
           event.shkeptncontext,
           evaluationResult,
         );
+
+        this.handleEvaluationResult(evaluationResult, event);
       } catch (e) {
         console.log(e);
         Logger.log(
@@ -58,5 +80,54 @@ export class Service {
     }
 
     return true;
+  }
+
+  private addPrometheusSource(event: RequestModel, pitometer: any, prometheusUrl: any) {
+    Logger.log(event.shkeptncontext, `Adding Prometheus source`);
+    pitometer.addSource('Prometheus', new PrometheusSource({
+      queryUrl: prometheusUrl,
+    }));
+  }
+
+  private async addDynatraceSource(event: RequestModel, pitometer: any) {
+    const dynatraceCredentials = await Credentials.getInstance().getDynatraceCredentials();
+    if (dynatraceCredentials !== undefined &&
+      dynatraceCredentials.tenantId !== undefined &&
+      dynatraceCredentials.apiToken !== undefined) {
+      Logger.log(
+        event.shkeptncontext,
+        `Adding Dynatrace Source for tenant ${dynatraceCredentials.tenantId}`,
+      );
+      pitometer.addSource('Dynatrace', new DynatraceSource({
+        baseUrl: `https://${dynatraceCredentials.tenantId}.live.dynatrace.com`,
+        apiToken: dynatraceCredentials.apiToken,
+        log: console.log,
+      }));
+    }
+  }
+
+  async handleEvaluationResult(evaluationResult: any, sourceEvent: RequestModel): Promise<void> {
+    const evaluationPassed: boolean =
+      evaluationResult.result !== undefined && evaluationResult.result === 'pass';
+
+    const event: RequestModel = new RequestModel();
+    event.shkeptncontext = sourceEvent.shkeptncontext;
+    event.data.githuborg = sourceEvent.data.githuborg;
+    event.data.teststategy = '';
+    event.data.deploymentstrategy = sourceEvent.data.deploymentstrategy;
+    event.data.stage = sourceEvent.data.stage;
+    event.data.service = sourceEvent.data.service;
+    event.data.image = sourceEvent.data.image;
+    event.data.tag = sourceEvent.data.tag;
+
+    if (evaluationPassed) {
+      Logger.log(event.shkeptncontext, `Evaluation passed`);
+      event.type = RequestModel.EVENT_TYPES.NEW_ARTEFACT;
+      event.data.teststategy = sourceEvent.data.teststategy;
+    } else {
+      Logger.log(event.shkeptncontext, `Evaluation failed`);
+      event.type = RequestModel.EVENT_TYPES.CONFIGURATION_CHANGED;
+    }
+    Keptn.sendEvent(event);
   }
 }

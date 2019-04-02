@@ -1,4 +1,7 @@
 import { ApiModel, ApiModelProperty } from 'swagger-express-ts';
+import moment from 'moment';
+
+const uuidv4 = require('uuid/v4');
 
 interface Data {
   githuborg: string;
@@ -16,6 +19,15 @@ interface Data {
   name: 'RequestModel',
 })
 export class RequestModel {
+
+  static EVENT_TYPES = {
+    NEW_ARTEFACT: 'sh.keptn.events.new-artefact',
+    CONFIGURATION_CHANGED: 'sh.keptn.events.configuration-changed',
+    DEPLOYMENT_FINISHED: 'sh.keptn.events.deployment-finished',
+    TESTS_FINISHED: 'sh.keptn.events.tests-finished',
+    EVALUATION_DONE: 'sh.keptn.events.evaluation-done',
+  };
+
   @ApiModelProperty({
     description: 'specversion',
     example: ['0.2'],
@@ -79,4 +91,13 @@ export class RequestModel {
     required: true,
   })
   data: Data;
+
+  constructor() {
+    this.id = uuidv4();
+    this.specversion = '0.2';
+    this.time = moment().format();
+    this.datacontenttype = 'application/json';
+    this.shkeptncontext = uuidv4();
+    this.data = {} as Data;
+  }
 }
