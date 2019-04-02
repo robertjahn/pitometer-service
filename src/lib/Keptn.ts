@@ -9,7 +9,7 @@ export class Keptn {
       return;
     }
     try {
-      await axios.post('http://event-broker', event);
+      await axios.post('http://event-broker/keptn', event);
     } catch (e) {
       Logger.log(event.shkeptncontext, 'Could not send event to event-broker', 'ERROR');
     }

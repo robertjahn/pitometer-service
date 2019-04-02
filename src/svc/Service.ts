@@ -110,24 +110,20 @@ export class Service {
     const evaluationPassed: boolean =
       evaluationResult.result !== undefined && evaluationResult.result === 'pass';
 
+    Logger.log(sourceEvent.shkeptncontext, `Evaluation passed: ${evaluationPassed}`);
+
     const event: RequestModel = new RequestModel();
+    event.type = RequestModel.EVENT_TYPES.EVALUATION_DONE;
     event.shkeptncontext = sourceEvent.shkeptncontext;
     event.data.githuborg = sourceEvent.data.githuborg;
-    event.data.teststategy = '';
+    event.data.teststategy = sourceEvent.data.teststategy;
     event.data.deploymentstrategy = sourceEvent.data.deploymentstrategy;
     event.data.stage = sourceEvent.data.stage;
     event.data.service = sourceEvent.data.service;
     event.data.image = sourceEvent.data.image;
     event.data.tag = sourceEvent.data.tag;
+    event.data.evaluationpassed = evaluationPassed;
 
-    if (evaluationPassed) {
-      Logger.log(event.shkeptncontext, `Evaluation passed`);
-      event.type = RequestModel.EVENT_TYPES.NEW_ARTEFACT;
-      event.data.teststategy = sourceEvent.data.teststategy;
-    } else {
-      Logger.log(event.shkeptncontext, `Evaluation failed`);
-      event.type = RequestModel.EVENT_TYPES.CONFIGURATION_CHANGED;
-    }
     Keptn.sendEvent(event);
   }
 }

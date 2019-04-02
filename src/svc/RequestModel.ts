@@ -12,6 +12,7 @@ interface Data {
   service: string;
   image: string;
   tag: string;
+  [x: string]: any;
 }
 
 @ApiModel({
