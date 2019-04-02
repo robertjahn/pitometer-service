@@ -1,9 +1,9 @@
 export class Logger {
-  static log(keptnContext: string, msg: string, logLevel: string = 'INFO'): void {
+  static log(keptnContext: string, message: string, logLevel: string = 'INFO'): void {
     console.log(JSON.stringify({
       keptnContext,
       logLevel,
-      msg,
+      message,
       keptnService: 'pitometer-service',
     }, null, 2));
   }
