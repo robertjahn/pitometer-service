@@ -11,6 +11,8 @@ const DynatraceSource = require('@pitometer/source-dynatrace').Source;
 // tslint:disable-next-line: variable-name
 const ThresholdGrader = require('@pitometer/grader-threshold').Grader;
 
+import moment from 'moment';
+
 import { Logger } from '../lib/Logger';
 import { Keptn } from '../lib/Keptn';
 import { Credentials } from '../lib/Credentials';
@@ -29,6 +31,12 @@ export class Service {
         `http://prometheus-service.monitoring.svc.cluster.local:8080/api/v1/query`;
     } else {
       prometheusUrl = 'http://localhost:9090/api/v1/query';
+    }
+
+    let minutes;
+    if (event.time !== undefined && event.data.startedat !== undefined) {
+      minutes =
+        moment.duration(moment(event.time).diff(moment(event.data.startedat))).asMinutes();
     }
 
     this.addPrometheusSource(event, pitometer, prometheusUrl);
@@ -61,6 +69,16 @@ export class Service {
     );
 
     if (perfspecResponse.data !== undefined) {
+      const indicators = [];
+      for (let i = 0; i < perfspecResponse.data.indicators.length; i += 1) {
+        const indicator = perfspecResponse.data.indicators[i];
+        if (indicator.source === 'Dynatrace' && indicator.query !== undefined) {
+          indicator.query.startTimestamp = moment(event.data.startedat).unix();
+          indicator.query.endTimestamp = moment(event.time).unix();
+        }
+        indicators.push(indicator);
+      }
+      perfspecResponse.data.indicators = indicators;
       try {
         const evaluationResult = await pitometer.run(perfspecResponse.data, 'prod');
         Logger.log(
@@ -78,7 +96,6 @@ export class Service {
         );
       }
     }
-
     return true;
   }
 
@@ -116,6 +133,7 @@ export class Service {
     event.type = RequestModel.EVENT_TYPES.EVALUATION_DONE;
     event.shkeptncontext = sourceEvent.shkeptncontext;
     event.data.githuborg = sourceEvent.data.githuborg;
+    event.data.project = sourceEvent.data.project;
     event.data.teststategy = sourceEvent.data.teststategy;
     event.data.deploymentstrategy = sourceEvent.data.deploymentstrategy;
     event.data.stage = sourceEvent.data.stage;
